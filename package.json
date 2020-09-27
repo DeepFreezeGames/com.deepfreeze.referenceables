@@ -1,0 +1,17 @@
+{
+  "name": "com.deepfreeze.referenceables",
+  "displayName": "Referenceables",
+  "registry": "https://github.com/DeepFreezeGames/com.deepfreeze.referenceables.git",
+  "version": "1.0.0",
+  "unity": "2018.1",
+  "description": "A Unity UPM package for referencing data in a clean way",
+  "keywords": [
+    "unity",
+    "packages",
+    "data",
+    "references"
+  ],
+  "dependencies": {
+  },
+  "category": "Unity"
+}
