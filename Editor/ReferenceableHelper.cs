@@ -161,7 +161,7 @@ namespace Referenceables.Editor
                 }
                 else
                 {
-                    Debug.LogWarningFormat("[DataForge References] Path: {0} was null", path);
+                    Debug.LogWarningFormat("[Referenceables] Path: {0} was null", path);
                 }
             }
 
@@ -222,7 +222,7 @@ namespace Referenceables.Editor
                 }
                 
                 var stringBuilder = new StringBuilder();
-                stringBuilder.Append("[GuidRefHelper] Added guids for:");
+                stringBuilder.Append($"<b>[{nameof(ReferenceableHelper)}]</b> Added guids for:");
                 foreach (var keyValuePair in _names)
                 {
                     stringBuilder.AppendFormat("\n{0}: {1}", keyValuePair.Key, keyValuePair.Value.Count.ToString());
