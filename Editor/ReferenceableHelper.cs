@@ -7,20 +7,19 @@ using Referenceables.Runtime;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace Referenceables.Editor
 {
     public static class ReferenceableHelper
     {
-        private static List<ReferenceableInfo> _entitiesToLoad = new List<ReferenceableInfo>();
-        private static Dictionary<Type, List<string>> _ids = new Dictionary<Type, List<string>>();
-        private static Dictionary<Type, List<string>> _guids = new Dictionary<Type, List<string>>();
-        private static Dictionary<Type, List<string>> _names = new Dictionary<Type, List<string>>();
-        private static Dictionary<Type, List<ScriptableObject>> _objects = new Dictionary<Type, List<ScriptableObject>>();
+        private static List<ReferenceableInfo> _entitiesToLoad = new();
+        private static Dictionary<Type, List<string>> _ids = new();
+        private static Dictionary<Type, List<string>> _guids = new();
+        private static Dictionary<Type, List<string>> _names = new();
+        private static Dictionary<Type, List<ScriptableObject>> _objects = new();
 
-        private static Dictionary<string, ReferenceableDetailInfo> _uniqueAssets = new Dictionary<string, ReferenceableDetailInfo>();
-        private static Dictionary<string, List<ReferenceableDetailInfo>> _duplicateAssets = new Dictionary<string, List<ReferenceableDetailInfo>>();
+        private static Dictionary<string, ReferenceableDetailInfo> _uniqueAssets = new();
+        private static Dictionary<string, List<ReferenceableDetailInfo>> _duplicateAssets = new();
         
         public static bool IsDirty { get; private set; }
         public static bool WasInitialized { get; private set; }
@@ -47,7 +46,7 @@ namespace Referenceables.Editor
             
             if (_duplicateAssets.Count != 0)
             {
-                Debug.LogError("Duplicate guid refs were found!");
+                LogError("Duplicate guid refs were found!");
             }
         }
 
@@ -67,7 +66,7 @@ namespace Referenceables.Editor
 
             foreach (var referenceableInfo in _entitiesToLoad)
             {
-                Debug.Log($"Searching for: {referenceableInfo.EntityType.Name}");
+                Log($"Searching for: {referenceableInfo.EntityType.Name}");
                 LoadIds($"t:{referenceableInfo.AssetType.FullName}", referenceableInfo.EntityType);
             }
 
@@ -98,13 +97,13 @@ namespace Referenceables.Editor
                         {
                             foreach (var customAttribute in customAttributes)
                             {
-                                Debug.Log($"Custom attribute: {customAttribute.ReferenceType}");
+                                Log($"Custom attribute: {customAttribute.ReferenceType}");
                             }
                         }
                     }
                     catch (Exception exception)
                     {
-                        Debug.LogError($"Could not get attributes for {exportedType.Name}");
+                        LogError($"Could not get attributes for {exportedType.Name}");
                         Debug.LogException(exception);
                         continue;
                     }
@@ -129,8 +128,7 @@ namespace Referenceables.Editor
             foreach (var guid in assetGuids)
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
-                var entity = AssetDatabase.LoadAssetAtPath(path, typeof(IReferenceable)) as IReferenceable;
-                if (entity != null)
+                if (AssetDatabase.LoadAssetAtPath(path, typeof(IReferenceable)) is IReferenceable entity)
                 {
                     ids.Add(entity.Id);
                     guids.Add(guid);
@@ -138,9 +136,9 @@ namespace Referenceables.Editor
                     var name = Path.GetFileNameWithoutExtension(path);
                     names.Add(name);
 
-                    if (entity.Id == null)
+                    if (string.IsNullOrEmpty(entity.Id))
                     {
-                        Debug.LogError($"Entity of type {entity.GetType()} had null ID");
+                        LogError($"Entity of type {entity.GetType()} had null ID");
                         continue;
                     }
 
@@ -150,6 +148,11 @@ namespace Referenceables.Editor
                     }
                     else
                     {
+                        if (ReferenceablesSettings.Instance.allowDuplicates)
+                        {
+                            continue;
+                        }
+                        
                         if (!_duplicateAssets.ContainsKey(entity.Id))
                         {
                             _duplicateAssets.Add(entity.Id, new List<ReferenceableDetailInfo>());
@@ -161,7 +164,7 @@ namespace Referenceables.Editor
                 }
                 else
                 {
-                    Debug.LogWarningFormat("[Referenceables] Path: {0} was null", path);
+                    LogWarning($"Path: {path} was null");
                 }
             }
 
@@ -211,31 +214,32 @@ namespace Referenceables.Editor
                 Initialize();
             }
 
-            //Only update the guids after compiling
-            if (IsDirty && !EditorApplication.isCompiling)
+            switch (IsDirty)
             {
-                IsDirty = false;
-                if (_names.Count == 0)
+                //Only update the guids after compiling
+                case true when !EditorApplication.isCompiling:
                 {
-                    Debug.Log("No Referenceable objects were found");
+                    IsDirty = false;
+                    if (_names.Count == 0)
+                    {
+                        Log("No Referenceable objects were found");
+                        return;
+                    }
+                
+                    var stringBuilder = new StringBuilder();
+                    stringBuilder.Append($"<b>[{nameof(ReferenceableHelper)}]</b> Added guids for:");
+                    foreach (var keyValuePair in _names)
+                    {
+                        stringBuilder.AppendFormat("\n{0}: {1}", keyValuePair.Key, keyValuePair.Value.Count.ToString());
+                    }
+
+                    Log(stringBuilder.ToString());
                     return;
                 }
-                
-                var stringBuilder = new StringBuilder();
-                stringBuilder.Append($"<b>[{nameof(ReferenceableHelper)}]</b> Added guids for:");
-                foreach (var keyValuePair in _names)
-                {
-                    stringBuilder.AppendFormat("\n{0}: {1}", keyValuePair.Key, keyValuePair.Value.Count.ToString());
-                }
-
-                Debug.Log(stringBuilder.ToString());
-                return;
-            }
-
-            //Automatically update Guids after compilation
-            if (!IsDirty && EditorApplication.isCompiling)
-            {
-                IsDirty = true;
+                //Automatically update Guids after compilation
+                case false when EditorApplication.isCompiling:
+                    IsDirty = true;
+                    break;
             }
         }
 
@@ -247,15 +251,16 @@ namespace Referenceables.Editor
                     {
                         foreach (var type in types)
                         {
+                            var (key, _) = keyValuePair;
                             if (excludes != null)
                             {
-                                if (excludes.Any(exclude => exclude.IsAssignableFrom(keyValuePair.Key)))
+                                if (excludes.Any(exclude => exclude.IsAssignableFrom(key)))
                                 {
                                     return false;
                                 }
                             }
 
-                            if (type.IsAssignableFrom(keyValuePair.Key))
+                            if (type.IsAssignableFrom(key))
                             {
                                 return true;
                             }
@@ -281,12 +286,13 @@ namespace Referenceables.Editor
                     {
                         foreach (var type in types)
                         {
-                            if (excludes.Any(exclude => exclude.IsAssignableFrom(keyValuePair.Key)))
+                            var (key, _) = keyValuePair;
+                            if (excludes.Any(exclude => exclude.IsAssignableFrom(key)))
                             {
                                 return false;
                             }
 
-                            if (type.IsAssignableFrom(keyValuePair.Key))
+                            if (type.IsAssignableFrom(key))
                             {
                                 return true;
                             }
@@ -318,15 +324,16 @@ namespace Referenceables.Editor
                     {
                         foreach (var type in types)
                         {
+                            var (key, _) = keyValuePair;
                             if(excludes != null)
                             {
-                                if (excludes.Any(exclude => exclude.IsAssignableFrom(keyValuePair.Key)))
+                                if (excludes.Any(exclude => exclude.IsAssignableFrom(key)))
                                 {
                                     return false;
                                 }
                             }
 
-                            if (type.IsAssignableFrom(keyValuePair.Key))
+                            if (type.IsAssignableFrom(key))
                             {
                                 return true;
                             }
@@ -374,13 +381,13 @@ namespace Referenceables.Editor
         
         public static string GetName(string id)
         {
-            foreach (var idPair in _ids)
+            foreach (var (key, value) in _ids)
             {
-                for (var i = 0; i < idPair.Value.Count; i++)
+                for (var i = 0; i < value.Count; i++)
                 {
-                    if (idPair.Value[i] == id)
+                    if (value[i] == id)
                     {
-                        return _names[idPair.Key][i];
+                        return _names[key][i];
                     }
                 }
             }
@@ -400,18 +407,42 @@ namespace Referenceables.Editor
 
         public static string GetGuid(string id)
         {
-            foreach (var idPair in _ids)
+            foreach (var (key, value) in _ids)
             {
-                for (var i = 0; i < idPair.Value.Count; i++)
+                for (var i = 0; i < value.Count; i++)
                 {
-                    if (idPair.Value[i] == id)
+                    if (value[i] == id)
                     {
-                        return _guids[idPair.Key][i];
+                        return _guids[key][i];
                     }
                 }
             }
 
             return null;
+        }
+
+        private static void Log(string message)
+        {
+            if (ReferenceablesSettings.Instance.logMessages)
+            {
+                Debug.Log($"[REFERENCEABLES] {message}");
+            }
+        }
+
+        private static void LogWarning(string message)
+        {
+            if (ReferenceablesSettings.Instance.logWarnings)
+            {
+                Debug.LogWarning($"[REFERENCEABLES] {message}");
+            }
+        }
+
+        private static void LogError(string message)
+        {
+            if (ReferenceablesSettings.Instance.logErrors)
+            {
+                Debug.LogError($"[REFERENCEABLES] {message}");
+            }
         }
     }
 }

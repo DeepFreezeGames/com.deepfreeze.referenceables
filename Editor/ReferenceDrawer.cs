@@ -12,6 +12,10 @@ namespace Referenceables.Editor
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            EditorGUI.BeginProperty(position, label, property);
+
+            position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
+            
             if (ReferenceableHelper.IsDirty || !ReferenceableHelper.WasInitialized)
             {
                 return;
@@ -32,15 +36,16 @@ namespace Referenceables.Editor
 
             var currentId = property.stringValue;
             var index = ids.IndexOf(currentId);
-            var slices = SliceProportions(position, 0.85f);
-            index = EditorGUI.Popup(slices[0], label.text, index, names.ToArray());
-            if (index >= 0 && index < ids.Count)
+            var slices = SliceProportions(position, 0.8f);
+            if (GUI.Button(slices[0], index == 0 ? "" : names[index], EditorStyles.popup))
             {
-                var newId = ids[index];
-                if (newId != currentId)
+                void Select(int i)
                 {
-                    property.stringValue = newId;
+                    property.stringValue = i <= 0 ? string.Empty : ids[i];
+                    property.serializedObject.ApplyModifiedProperties();
                 }
+                
+                SearchablePopup.Show(slices[0], names.ToArray(), index, Select);
             }
 
             if (index == 0)
@@ -73,7 +78,7 @@ namespace Referenceables.Editor
             }
             else
             {
-                if (GUI.Button(slices[1], "Select"))
+                if (GUI.Button(slices[1], "Select", EditorStyles.miniButton))
                 {
                     var guid = ReferenceableHelper.GetGuid(property.stringValue);
                     var assetPath = AssetDatabase.GUIDToAssetPath(guid);
@@ -82,6 +87,8 @@ namespace Referenceables.Editor
                     Selection.activeObject = asset;
                 }
             }
+            
+            EditorGUI.EndProperty();
         }
 
         private static Rect[] SliceProportions(Rect rect, float widthProportions)
