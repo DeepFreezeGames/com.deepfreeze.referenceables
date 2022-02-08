@@ -3,7 +3,7 @@
   "displayName": "Referenceables",
   "author": {"name": "Deep Freeze Games", "url": "https://github.com/DeepFreezeGames"},
   "registry": "https://github.com/DeepFreezeGames/com.deepfreeze.referenceables.git",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "unity": "2018.1",
   "description": "A Unity UPM package for referencing data in a clean way",
   "keywords": [
