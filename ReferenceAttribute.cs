@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Referenceables.Runtime
+namespace Referenceables
 {
     public class ReferenceAttribute : PropertyAttribute
     {

@@ -1,4 +1,4 @@
-namespace Referenceables.Runtime
+namespace Referenceables
 {
     public interface IReferenceable
     {
