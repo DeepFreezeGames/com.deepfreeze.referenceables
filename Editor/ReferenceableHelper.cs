@@ -7,6 +7,7 @@ using Referenceables;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Referenceables.Editor
 {
@@ -313,6 +314,14 @@ namespace Referenceables.Editor
         public static List<string> GetGuids(Type type)
         {
             return _guids.ContainsKey(type) ? _guids[type] : null;
+        }
+
+        public static Object GetAssetWithId(string id)
+        {
+            var guid = AssetDatabase.FindAssets($"{GetName(id)}").First();
+            return guid == null 
+                ? default(Object) 
+                : AssetDatabase.LoadAssetAtPath<ScriptableObject>(AssetDatabase.GUIDToAssetPath(guid));
         }
 
         public static List<string> GetNames(Type[] types, Type[] excludes)

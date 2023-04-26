@@ -7,11 +7,22 @@ namespace Referenceables.Editor
 {
     public class ReferenceablesEditorWindow : EditorWindow
     {
-        private Type _selectedType= null;
+        private Type _selectedType;
         private Vector2 _scrollPos = Vector2.zero;
 
         private bool _showingOptions;
         private UnityEditor.Editor _settingsEditor;
+        private UnityEditor.Editor _selectedAsset;
+
+        private string _searchValue = string.Empty;
+        public string SearchValue
+        {
+            get => _searchValue;
+            set
+            {
+                
+            }
+        }
         
         [MenuItem("Window/Asset Management/Referenceables/Editor Window")]
         public static void Initialize()
@@ -35,7 +46,7 @@ namespace Referenceables.Editor
                 EditorGUILayout.BeginVertical();
                 {
                     DrawToolbar();
-                    DrawInspector();
+                    DrawItemList();
                 }
                 EditorGUILayout.EndVertical();
             }
@@ -53,6 +64,7 @@ namespace Referenceables.Editor
                     if (GUILayout.Button(type.Name))
                     {
                         _selectedType = _selectedType != null && _selectedType == type ? null : type;
+                        _selectedAsset = null;
                         _scrollPos = Vector2.zero;
                         GUI.FocusControl(null);
                     }
@@ -90,7 +102,7 @@ namespace Referenceables.Editor
             EditorGUILayout.EndHorizontal();
         }
 
-        private void DrawInspector()
+        private void DrawItemList()
         {
             EditorGUILayout.BeginVertical("box", GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
             {
@@ -107,8 +119,10 @@ namespace Referenceables.Editor
                     EditorGUILayout.EndHorizontal();
                     _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
                     {
+                        var currentId = _selectedAsset != null ? ((IReferenceable)_selectedAsset.target).Id : string.Empty;
                         foreach (var item in items)
                         {
+                            GUI.color = currentId.Equals(item) ? Color.cyan : Color.white;
                             EditorGUILayout.BeginHorizontal("box");
                             {
                                 GUILayout.Label(ReferenceableHelper.GetName(_selectedType, item), GUILayout.Width(itemWidth));
@@ -117,22 +131,37 @@ namespace Referenceables.Editor
                                     ReferenceableHelper.DuplicateAssets.ContainsKey(item)
                                         ? Color.red
                                         : Color.white;
-                                GUILayout.Label(item, GUILayout.Width(itemWidth));
-                                GUILayout.FlexibleSpace();
+                                GUILayout.Label(item);
+                                //GUILayout.FlexibleSpace();
                                 GUI.contentColor = Color.white;
-                                if(GUILayout.Button("Select", EditorStyles.miniButton, GUILayout.Width(50f)))
-                                {
-                                    var guid = AssetDatabase.FindAssets($"{ReferenceableHelper.GetName(item)}").First();
-                                    if (guid != null)
-                                    {
-                                        var path = AssetDatabase.GUIDToAssetPath(guid);
-                                        var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(path);
-                                        Selection.activeObject = asset;
-                                        EditorUtility.FocusProjectWindow();
-                                    }
-                                }
                             }
                             EditorGUILayout.EndHorizontal();
+                            GUI.color = Color.white;
+                            var e = Event.current;
+                            var rect = GUILayoutUtility.GetLastRect();
+                            if (e.isMouse && e.type == EventType.MouseDown && rect.Contains(e.mousePosition))
+                            {
+                                switch (e.button)
+                                {
+                                    case 0:
+                                        var asset = ReferenceableHelper.GetAssetWithId(item);
+                                        _selectedAsset = (_selectedAsset != null ? _selectedAsset.target : null) == asset
+                                            ? null
+                                            : UnityEditor.Editor.CreateEditor(asset);
+                                        Selection.activeObject = asset;
+                                        GUI.FocusControl(null);
+                                        e.Use();
+                                        break;
+                                    case 1:
+                                        var menu = new GenericMenu();
+                                        menu.AddItem(new GUIContent("Regenerate GUID"), false, () => {});
+                                        menu.AddItem(new GUIContent("Edit GUID"), false, () => {});
+                                        menu.AddSeparator("");
+                                        menu.AddItem(new GUIContent("Add To Addressables"), false, () => {});
+                                        menu.ShowAsContext();
+                                        break;
+                                }
+                            }
                         }
                     }
                     EditorGUILayout.EndScrollView();
