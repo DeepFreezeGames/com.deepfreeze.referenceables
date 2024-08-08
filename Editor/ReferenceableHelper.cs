@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Referenceables;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
@@ -168,38 +167,22 @@ namespace Referenceables.Editor
                 }
             }
 
-            if (!_ids.ContainsKey(type))
-            {
-                _ids.Add(type, ids);
-            }
-            else
+            if (!_ids.TryAdd(type, ids))
             {
                 _ids[type].AddRange(ids);
             }
 
-            if (!_guids.ContainsKey(type))
-            {
-                _guids.Add(type, guids);
-            }
-            else
+            if (!_guids.TryAdd(type, guids))
             {
                 _guids[type].AddRange(guids);
             }
 
-            if (!_names.ContainsKey(type))
-            {
-                _names.Add(type, names);
-            }
-            else
+            if (!_names.TryAdd(type, names))
             {
                 _names[type].AddRange(names);
             }
-            
-            if (!_objects.ContainsKey(type))
-            {
-                _objects.Add(type, objs);
-            }
-            else
+
+            if (!_objects.TryAdd(type, objs))
             {
                 _objects[type].AddRange(objs);
             }
@@ -419,6 +402,13 @@ namespace Referenceables.Editor
             }
 
             return null;
+        }
+
+        public static Type GetType(string id)
+        {
+
+
+            return typeof(ScriptableObject);
         }
 
         private static void Log(string message)

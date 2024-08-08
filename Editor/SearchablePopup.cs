@@ -177,9 +177,9 @@ namespace Referenceables.Editor
         // the current skin which will be the editor skin and lets us get some
         // built-in styles.
         
-        private static GUIStyle SearchBox = "ToolbarSeachTextField";
-        private static GUIStyle CancelButton = "ToolbarSeachCancelButton";
-        private static GUIStyle DisabledCancelButton = "ToolbarSeachCancelButtonEmpty";
+        private static GUIStyle SearchBox = "ToolbarSearchTextField";
+        private static GUIStyle CancelButton = "ToolbarSearchCancelButton";
+        private static GUIStyle DisabledCancelButton = "ToolbarSearchCancelButtonEmpty";
         private static GUIStyle Selection = "SelectionRect";
         #endregion -- GUI Styles ----------------------------------------------
         

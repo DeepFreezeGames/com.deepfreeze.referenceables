@@ -96,11 +96,12 @@ namespace Referenceables.Editor
             {
                 if (_selectedType != null)
                 {
-                    var itemWidth = (position.width - 319) / 2f;
+                    var itemWidth = (position.width - 319) / 3f;
                     var items = ReferenceableHelper.GetIds(new []{_selectedType}, Type.EmptyTypes);
                     EditorGUILayout.BeginHorizontal("box");
                     {
                         GUILayout.Label("Asset Name", EditorStyles.boldLabel, GUILayout.Width(itemWidth));
+                        GUILayout.Label("Asset Type", EditorStyles.boldLabel, GUILayout.Width(itemWidth));
                         GUILayout.Label("Reference ID", EditorStyles.boldLabel, GUILayout.Width(itemWidth + 31f));
                         GUILayout.FlexibleSpace();
                     }
@@ -112,6 +113,7 @@ namespace Referenceables.Editor
                             EditorGUILayout.BeginHorizontal("box");
                             {
                                 GUILayout.Label(ReferenceableHelper.GetName(_selectedType, item), GUILayout.Width(itemWidth));
+                                GUILayout.Label(ReferenceableHelper.GetType(item).Name, GUILayout.Width(itemWidth));
                                 GUI.contentColor =
                                     ReferenceableHelper.DuplicateAssets.Count != 0 &&
                                     ReferenceableHelper.DuplicateAssets.ContainsKey(item)
